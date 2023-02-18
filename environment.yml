@@ -1,0 +1,8 @@
+name: wordle
+dependencies:
+  - numpy
+  - pandas
+  - matplotlib
+  - pytest
+  - jupyter
+  - ipykernel
