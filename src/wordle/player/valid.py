@@ -4,14 +4,21 @@
 from wordle.game import Character, CharacterResult, GuessOutcome
 
 
-def is_word_possible_given_guess_outcome(candidate_word: str, outcome: GuessOutcome):
+def is_word_possible_given_guess_outcome(
+    candidate_word: str, outcome: GuessOutcome
+) -> tuple[bool, str]:
+
     leftover = {i: char for i, char in enumerate(candidate_word.upper())}
+
     check, msg = _check_shares_correct_letters(leftover, outcome)
+
     if not check:
         return False, msg
     check, msg = _check_includes_oop_letters(leftover, outcome)
+
     if not check:
         return False, msg
+
     return _check_does_not_include_absent_letters(leftover, outcome)
 
 
@@ -45,14 +52,3 @@ def _check_does_not_include_absent_letters(leftover, outcome):
         if absent_gl.letter in leftover.values():
             return False, "`{absent_gl.letter}` should not be included"
     return True, "all checks passed"
-
-
-def is_word_possible_given_guess_outcome(candidate_word: str, outcome: GuessOutcome):
-    leftover = {i: char for i, char in enumerate(candidate_word)}
-    check, msg = _check_shares_correct_letters(leftover, outcome)
-    if not check:
-        return False, msg
-    check, msg = _check_includes_oop_letters(leftover, outcome)
-    if not check:
-        return False, msg
-    return _check_does_not_include_absent_letters(leftover, outcome)

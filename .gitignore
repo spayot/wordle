@@ -1,3 +1,6 @@
+# Exclude heavy data saved
+data/transformed/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
