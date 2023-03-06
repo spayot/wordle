@@ -11,8 +11,12 @@ class Player(Protocol):
     def update(self, guess_outcome: GuessOutcome) -> None:
         ...
 
+    def start_new_game(self) -> None:
+        ...
+
 
 def play_game(player: Player, game: WordleGame, quiet: bool = False) -> WordleGame:
+    player.start_new_game()
     while not game.is_over:
         guess = player.make_next_guess(game)
         outcome = game.record_player_guess(guess)

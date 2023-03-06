@@ -6,4 +6,7 @@ dependencies:
   - pytest
   - jupyter
   - ipykernel
+  - ipywidgets>=7.0,<8.0
   - tqdm
+  - plotly
+  - python-kaleido

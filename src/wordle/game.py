@@ -1,13 +1,15 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
+import numpy as np
+
 Character = str
 
 
 class CharacterResult(Enum):
-    ABSENT = "_"
-    OOP = "O"
-    CORRECT = "C"
+    ABSENT = 0
+    OOP = 1
+    CORRECT = 2
 
 
 @dataclass
@@ -25,7 +27,8 @@ class GuessOutcome:
     def __init__(self, guessed_letters: list[GuessedLetter]):
         self.guessed_letters = guessed_letters
         self.guess_word = "".join([gl.letter for gl in guessed_letters]).upper()
-        self.shortform = "".join([gl.result.value for gl in guessed_letters])
+        self.shortform = "".join([str(gl.result.value) for gl in guessed_letters])
+        self.uint8 = self._to_uint8(guessed_letters)
 
     def __getitem__(self, i: int):
         return self.guessed_letters[i]
@@ -37,7 +40,26 @@ class GuessOutcome:
         return [gl for gl in self.guessed_letters if gl.result == char_result]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.guess_word}, {self.shortform})"
+        return f"{self.__class__.__name__}({self.guess_word}, {self.shortform}, uint8={self.uint8})"
+
+    @staticmethod
+    def _to_uint8(guessed_letters: list[GuessedLetter]) -> np.ndarray:
+        return np.dot(
+            [gl.result.value for gl in guessed_letters],
+            (3 ** np.arange(len(guessed_letters))).astype(np.uint8),
+        )
+
+
+def decimal_to_ternary(uint8: int, word_length: int = 5) -> str:
+    """converts a uint8 representation of a guess outcome into a ternary representation."""
+    if uint8 == 0:
+        return "0"
+    ternary = ""
+    while uint8 > 0:
+        remainder = uint8 % 3
+        ternary = str(remainder) + ternary
+        uint8 //= 3
+    return ternary.rjust(word_length, "0")
 
 
 @dataclass
@@ -95,6 +117,13 @@ class WordleGame:
             self.is_over = True
 
         return guess_outcome
+
+    @property
+    def score(self) -> int:
+        if not self.is_over:
+            return None
+        else:
+            return 6 - self.number_of_guesses + int(self.solved)
 
 
 def _find_correct_letters(target_word: str, guess_word: str) -> list[GuessedLetter]:

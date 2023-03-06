@@ -4,10 +4,12 @@ import functools
 import pickle
 from collections import defaultdict
 from dataclasses import dataclass
+from multiprocessing import Pool
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from tqdm.notebook import trange
 
 import wordle as wd
 
@@ -32,16 +34,30 @@ class PossibleSolutionsMap:
         self.allowed_words = allowed_words
         self.n_allowed = len(allowed_words)
 
-    def build_map(self) -> dict[defaultdict(dict)]:
-        """"""
-        mapping = defaultdict(dict)
-        for solution in self.possible_solutions.index:
-            game = wd.WordleGame(solution)
-            for guess_word in self.allowed_words:
-                guess_outcome = game.evaluate_guess(guess_word)
-                mapping[solution][guess_word] = guess_outcome.shortform
+    def build_map(self):
+        """pre-computes guess outcome between all allowed words and all possible solutions.
+        the result is stored in a pandas DataFrame with uint8 outcome values, allowed words as column names
+        and possible solutions as index values.
+        results are stored in `self.map`"""
 
-        self.map = pd.DataFrame.from_dict(mapping, orient="index")
+        numpy_map = np.empty(
+            (self.n_solutions, len(self.allowed_words)),
+            dtype=np.uint8,
+        )
+        for i in trange(self.n_solutions):
+            solution = self.possible_solutions.index[i]
+            game = wd.WordleGame(solution)
+
+            def _eval_guess_word(guess_word):
+                return game.evaluate_guess(guess_word).uint8
+
+            numpy_map[i, :] = list(map(_eval_guess_word, self.allowed_words))
+
+        self.map = pd.DataFrame(
+            numpy_map,
+            index=self.possible_solutions.index,
+            columns=self.allowed_words,
+        )
 
     @classmethod
     def from_map(cls, map: pd.DataFrame, possible_solutions: dict[str, float]):
@@ -54,7 +70,7 @@ class PossibleSolutionsMap:
         self, guess_outcome: wd.game.GuessOutcome
     ) -> PossibleSolutionsMap:
         map = self.map.query(
-            f"{guess_outcome.guess_word.lower()}=='{guess_outcome.shortform}'"
+            f"`{guess_outcome.guess_word.lower()}`=={guess_outcome.uint8}"
         )
         return PossibleSolutionsMap.from_map(
             map=map, possible_solutions=self.possible_solutions[map.index]
@@ -86,14 +102,15 @@ class PossibleSolutionsMap:
 
     def to_pickle(self, path: Path):
         with open(path, "wb") as f:
-            pickle.dump(self, f)
+            pickle.dump((self.map, self.possible_solutions), f)
+            pickle.dump(self.possible_solutions, f)
 
     @classmethod
     def from_pickle(cls, path: Path):
         with open(path, "rb") as f:
-            psm = pickle.load(f)
+            m, ps = pickle.load(f)
 
-        return psm
+        return cls.from_map(m, ps)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(n_solutions={self.n_solutions},n_allowed={self.n_allowed},entropy={self.entropy:.2f})"

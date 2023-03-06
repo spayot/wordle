@@ -3,8 +3,9 @@ from wordle.player import map
 
 
 class GreedyPlayer:
-    def __init__(self, psm: map.PossibleSolutionsMap):
-        self.psm = psm
+    def __init__(self, starting_psm: map.PossibleSolutionsMap):
+        self._starting_psm = starting_psm
+        self.psm = starting_psm
 
     def make_next_guess(self, game: game.WordleGame) -> str:
         # select candidate guess with highest entropy
@@ -15,3 +16,6 @@ class GreedyPlayer:
 
     def update(self, guess_outcome: game.GuessOutcome) -> None:
         self.psm = self.psm.filter_based_on_guess_outcome(guess_outcome)
+
+    def start_new_game(self) -> None:
+        self.psm = self._starting_psm
