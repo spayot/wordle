@@ -62,14 +62,14 @@ class EvalResults:
         fig = px.bar(
             self.value_counts(),
             template="plotly_dark",
-            title=f"{title} - avg. score: {self.avg_score:.2f} - success rate: {self.success_rate:.0%}",
+            title=f"{title}<br>avg. score: {self.avg_score:.2f}<br>success rate: {self.success_rate:.0%}",
             y="counts",
             labels={
                 "index": "game score (points)",
                 "counts": "number of evaluated games",
             },
-            xlim=[0, len(self.scores)],
         )
+        fig.update_yaxes({"range": [0, len(self.scores)]})
         fig.show()
         return fig
 
