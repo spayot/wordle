@@ -4,7 +4,7 @@
 ## Method and Results
 
 ### Heuristic
-* the $entropy=\sum p * log_2(1 / p)$ measures the expected information gain, i.e. how much a possible guess word is expected to reduce the number of possible solutions on average (in other words, the weighted average of all possible outcomes)
+* the $entropy=\sum p * log_2(1 / p)$ measures the expected information gain from a given guess word, i.e. how much that guess is expected to reduce the number of possible solutions on average (in other words, the weighted average of all possible outcomes)
 * v1: considers a list of 13k words without factoring in prior knowledge about the actual set of possible solutions (all 13k words are equally considered possible)
 * v2: list of actual possible solutions (2.9k words) is used as prior.
 * v3: same as v2, but entropy is calculated over 2 steps (expected information gain given best next guess following original one and guess outcome)
@@ -17,8 +17,10 @@
 |:---|:---:|---:|
 | ![](images/eval_v1.png)| ![](images/eval_v2.png)|  ![](images/eval_v3.png)|
 
-Theoretical best average score has been estimated to *3.58* (cf. 3 blue 1 brown).
-My current implementation does not seem to deliver the full value for v3. It remains on par with v2 and is much more computationally expensive.
+Theoretical best average score has been estimated to *3.58* (cf. [3blue1brown](https://www.3blue1brown.com/lessons/wordle)).
+v1 and v2 performance is on par with 3blue1brown.
+As for v3, the current implementation does not seem to deliver the full value (which should be fairly close to theoretical best).
+Although 2-step entropies for top first guesses align well with results discussed in 3blue1brown, the avg score remains essentially flat vs v2 and is much more computationally expensive. further investigation of the `TwoStepPlayer.make_next_guess` implementation would be necessary.
 
 ### Comparing v2 vs v3: 1-Step vs 2-steps entropies
 2-step entropy leads to a reshuffling of top starting words, even though 1-step entropy remains a strong predictor of 2 step entropy.
