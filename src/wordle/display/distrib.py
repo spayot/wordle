@@ -1,21 +1,11 @@
 import pandas as pd
 import plotly.express as px
-from IPython.display import HTML, display
 
-from wordle import game, player
-
-COLORING = {"OOP": "#b89d02", "ABSENT": "black", "CORRECT": "#098710"}
+from wordle import game
+from wordle.player import map
 
 
-def display_wordle_guess_outcome(results: game.GuessOutcome):
-    html_string = '<font size="7" style="font-family:Monospace">'
-    for gl in results.guessed_letters:
-        html_string += f'<span style="background-color:{COLORING[gl.result.name]}">{gl.letter.upper()}</span>'
-
-    display(HTML(html_string))
-
-
-def generate_word_distrib(word, psm: player.PossibleSolutionsMap):
+def generate_word_distrib(word, psm: map.PossibleSolutionsMap):
     distrib = (
         psm.map.groupby(word).apply(lambda x: list(x.index)).to_frame("possibilities")
     )
@@ -28,7 +18,7 @@ def generate_word_distrib(word, psm: player.PossibleSolutionsMap):
     return distrib.sort_values("probability", ascending=False)
 
 
-def plot_distrib(word: str, psm: player.PossibleSolutionsMap):
+def plot_distrib(word: str, psm: map.PossibleSolutionsMap):
     distrib = generate_word_distrib(word, psm)
     fig = px.bar(
         distrib,

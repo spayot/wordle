@@ -8,10 +8,11 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
-import yaml
-from tqdm import tqdm_notebook as tqdm
+import plotly.graph_objects as go
 
-import wordle as wd
+from wordle import game as game_module
+from wordle import load
+from wordle import player as player_module
 
 
 @dataclass
@@ -74,15 +75,17 @@ class EvalResults:
         return fig
 
 
-def play_eval_game(eval_word: str, player: wd.player.Player) -> wd.WordleGame:
-    game = wd.WordleGame(eval_word)
-    game = wd.player.play_game(player, game, quiet=True)
+def play_eval_game(
+    eval_word: str, player: player_module.Player
+) -> game_module.WordleGame:
+    game = game_module.WordleGame(eval_word)
+    game = player_module.play_game(player, game, quiet=True)
     return eval_word, game.score
 
 
 def eval_player(
     eval_words_list: list[str],
-    player: wd.player.Player,
+    player: player_module.Player,
     pool_size: int = 1,
 ) -> EvalResults:
 
@@ -96,3 +99,20 @@ def eval_player(
 
     print(scores)
     return scores
+
+
+def run_eval_from_config(config) -> tuple[EvalResults, go.Figure]:
+
+    player_module.get_all_candidate_entropies.cache_clear()
+    eval_words_list = load.load_words_as_list(config["path_to_eval_words_list"])
+
+    results = eval_player(eval_words_list, config["player"], pool_size=1)
+
+    # save results
+    results.to_json(config["path_to_json_output"])
+    print(f"results saved in `{config['path_to_json_output']}`")
+
+    fig = results.barplot(title=config["fig_title"])
+    fig.write_image(config["fig_name"])
+
+    return results, fig

@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 
 import numpy as np
 
+_powers_of_three = (3 ** np.arange(5)).astype(np.uint8)
 Character = str
 
 
@@ -27,8 +30,10 @@ class GuessOutcome:
     def __init__(self, guessed_letters: list[GuessedLetter]):
         self.guessed_letters = guessed_letters
         self.guess_word = "".join([gl.letter for gl in guessed_letters]).upper()
-        self.shortform = "".join([str(gl.result.value) for gl in guessed_letters])
-        self.uint8 = self._to_uint8(guessed_letters)
+        ternary = "".join([str(gl.result.value) for gl in guessed_letters])
+        self.ternary = ternary
+        # self.powers_of_three = (3 ** np.arange(len(guessed_letters))).astype(np.uint8)
+        self.uint8 = self._to_uint8(ternary)
 
     def __getitem__(self, i: int):
         return self.guessed_letters[i]
@@ -40,26 +45,41 @@ class GuessOutcome:
         return [gl for gl in self.guessed_letters if gl.result == char_result]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.guess_word}, {self.shortform}, uint8={self.uint8})"
+        return f"{self.__class__.__name__}({self.guess_word}, {self.ternary}, uint8={self.uint8})"
 
     @staticmethod
-    def _to_uint8(guessed_letters: list[GuessedLetter]) -> np.ndarray:
+    def _to_uint8(ternary: str):
         return np.dot(
-            [gl.result.value for gl in guessed_letters],
-            (3 ** np.arange(len(guessed_letters))).astype(np.uint8),
+            [int(x) for x in ternary],
+            _powers_of_three,
         )
+
+    @classmethod
+    def from_uint8(cls, guess_word: str, uint8: int) -> GuessOutcome:
+        ternary = decimal_to_ternary(uint8, len(guess_word))
+        guessed_letters = [
+            GuessedLetter(pos, letter, CharacterResult(int(r)))
+            for pos, (letter, r) in enumerate(zip(guess_word, ternary))
+        ]
+        return cls(guessed_letters)
 
 
 def decimal_to_ternary(uint8: int, word_length: int = 5) -> str:
     """converts a uint8 representation of a guess outcome into a ternary representation."""
     if uint8 == 0:
-        return "0"
+        return "0" * word_length
     ternary = ""
     while uint8 > 0:
         remainder = uint8 % 3
-        ternary = str(remainder) + ternary
+        ternary = ternary + str(remainder)
         uint8 //= 3
-    return ternary.rjust(word_length, "0")
+    return ternary.ljust(word_length, "0")
+
+
+def ternary_to_decimal(ternary: str):
+    ternary_arr = np.array([int(digit) for digit in ternary])
+    decimal = np.sum(ternary_arr[::-1] * _powers_of_three)
+    return decimal
 
 
 @dataclass
@@ -77,8 +97,7 @@ class WordleGame:
         if not self.target_word:
             self.target_word = self.random_choose_target_words()
 
-    def random_choose_target_words(self):
-        """TO IMPLEMENT"""
+    def random_choose_target_words(self) -> str:
         return "tests"
 
     def evaluate_guess(self, guess_word: str):

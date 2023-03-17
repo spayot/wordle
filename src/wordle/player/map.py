@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from tqdm.notebook import trange
 
-import wordle as wd
+from wordle import game as game_module
 
 
 @dataclass
@@ -46,7 +46,7 @@ class PossibleSolutionsMap:
         )
         for i in trange(self.n_solutions):
             solution = self.possible_solutions.index[i]
-            game = wd.WordleGame(solution)
+            game = game_module.WordleGame(solution)
 
             def _eval_guess_word(guess_word):
                 return game.evaluate_guess(guess_word).uint8
@@ -67,7 +67,7 @@ class PossibleSolutionsMap:
         return psm
 
     def filter_based_on_guess_outcome(
-        self, guess_outcome: wd.game.GuessOutcome
+        self, guess_outcome: game_module.GuessOutcome
     ) -> PossibleSolutionsMap:
         map = self.map.query(
             f"`{guess_outcome.guess_word.lower()}`=={guess_outcome.uint8}"
@@ -122,12 +122,7 @@ class PossibleSolutionsMap:
         return hash(("".join(self.possible_solutions.keys())))
 
 
-def get_candidate_entropy(psm: PossibleSolutionsMap, candidate_word: str) -> float:
-    grouped_words = psm.possible_solutions.groupby(psm.map.loc[:, candidate_word]).sum()
-    return psm._words_freq_series_to_entropy(grouped_words)
-
-
-@functools.lru_cache(maxsize=1_000)
+@functools.lru_cache(maxsize=300)
 def get_all_candidate_entropies(psm: PossibleSolutionsMap) -> pd.Series:
     return pd.Series(
         {word: psm.get_candidate_entropy(word) for word in psm.map.columns}

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from wordle.display import display_wordle_guess_outcome
+from wordle.display.game import display_wordle_guess_outcome
 from wordle.game import GuessOutcome, WordleGame
 
 
